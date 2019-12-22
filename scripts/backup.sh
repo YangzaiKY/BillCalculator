@@ -1,3 +1,3 @@
 #!/bin/bash
-cp ../data/*.json ../
+cp ../data/*.json ../../BillBackup
 

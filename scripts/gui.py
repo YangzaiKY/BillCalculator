@@ -13,12 +13,13 @@ class App:
         else:
             self.product_name = []
             self.price = []
+        self.bill_result = None
 
         self.init_widgets()
 
     def init_widgets(self):
         frame = Frame(self.master)
-        frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+        frame.place(relx=0, rely=0, relwidth=1, relheight=0.6)
 
         Label(frame, text='Date:', font=(None, 12)).place(relx=0, rely=0, relwidth=0.1, relheight=0.05)
 
@@ -38,16 +39,17 @@ class App:
         self._supermarket.place(relx=0.45, rely=0, relwidth=0.15, relheight=0.07)
         self._supermarket['values'] = self.BC.supermarket
 
-        Label(frame, text='product name', font=(None, 12)).place(relx=0, rely=0.06, relwidth=0.2, relheight=0.05)
-        Label(frame, text='amount', font=(None, 12)).place(relx=0.21, rely=0.06, relwidth=0.09, relheight=0.05)
-        Label(frame, text='price', font=(None, 12)).place(relx=0.31, rely=0.06, relwidth=0.1, relheight=0.05)
-        Label(frame, text='owner', font=(None, 12)).place(relx=0.42, rely=0.06, relwidth=0.1, relheight=0.05)
-        Label(frame, text='buyer', font=(None, 12)).place(relx=0.61, rely=0.06, relwidth=0.1, relheight=0.05)
-        Label(frame, text='paid', font=(None, 12)).place(relx=0.68, rely=0.06, relwidth=0.1, relheight=0.05)
+        Label(frame, text='product name', font=(None, 12)).place(relx=0, rely=0.06, relwidth=0.22, relheight=0.05)
+        Label(frame, text='amount', font=(None, 12)).place(relx=0.23, rely=0.06, relwidth=0.09, relheight=0.05)
+        Label(frame, text='price', font=(None, 12)).place(relx=0.33, rely=0.06, relwidth=0.1, relheight=0.05)
+        Label(frame, text='owner', font=(None, 12)).place(relx=0.44, rely=0.06, relwidth=0.13, relheight=0.05)
+        Label(frame, text='buyer', font=(None, 12)).place(relx=0.58, rely=0.06, relwidth=0.13, relheight=0.05)
+        Label(frame, text='paid', font=(None, 12)).place(relx=0.72, rely=0.06, relwidth=0.1, relheight=0.05)
 
         self.product_name_var = StringVar()
         self._product_name = ttk.Combobox(frame,
-                                          textvariable=self.product_name_var)
+                                          textvariable=self.product_name_var,
+                                          postcommand=self.fuzzy_matching)
         self._product_name.bind("<<ComboboxSelected>>", self.product_name_selected)
         self._product_name.place(relx=0.01, rely=0.12, relwidth=0.22, relheight=0.07)
         self._product_name['values'] = self.product_name
@@ -90,11 +92,11 @@ class App:
 
         self.product_list_var = StringVar()
         self._product_list = Listbox(frame, font=(None, 12), listvariable=self.product_list_var)
-        self._product_list.place(relx=0.01, rely=0.2, relwidth=0.83, relheight=0.75)
+        self._product_list.place(relx=0.01, rely=0.2, relwidth=0.83, relheight=0.77)
         self._product_list['selectmode'] = 'single'
 
         scroll = Scrollbar(frame, command=self._product_list.yview)
-        scroll.place(relx=0.83, rely=0.2, width=15, relheight=0.75)
+        scroll.place(relx=0.83, rely=0.2, width=15, relheight=0.77)
         self._product_list.configure(yscrollcommand=scroll.set)
 
         Button(frame, text='delete bill', font=(None, 12),
@@ -105,6 +107,95 @@ class App:
 
         Button(frame, text='save', font=(None, 12),
                command=self.save).place(relx=0.85, rely=0.42, relwidth=0.14, relheight=0.07)
+
+        info_frame = Frame(self.master)
+        info_frame.place(relx=0, rely=0.6, relwidth=1, relheight=0.4)
+
+        Label(info_frame, text='start date: ', font=(None, 14)).place(relx=0.01, rely=0, relwidth=0.07, relheight=0.1)
+
+        self.start_year_var = StringVar()
+        self._start_year = ttk.Combobox(info_frame,
+                                        textvariable=self.start_year_var)
+        self._start_year.place(relx=0.08, rely=0, relwidth=0.07, relheight=0.1)
+        self._start_year['values'] = ['2019', '2020']
+        self.start_year_var.set('2019')
+
+        self.start_month_var = StringVar()
+        self._start_month = ttk.Combobox(info_frame,
+                                         textvariable=self.start_month_var)
+        self._start_month.bind('<<ComboboxSelected>>', self._adjust_start_day)
+        self._start_month.place(relx=0.15, rely=0, relwidth=0.05, relheight=0.1)
+        self._start_month['values'] = [str(i).zfill(2) for i in range(1, 13)]
+        self.start_month_var.set('10')
+
+        self.start_day_var = StringVar()
+        self._start_day = ttk.Combobox(info_frame,
+                                       textvariable=self.start_day_var)
+        self._start_day.place(relx=0.2, rely=0, relwidth=0.05, relheight=0.1)
+        self._adjust_start_day()
+        # self._start_day['values'] = [str(i).zfill(2) for i in range(1, 32 if int(self.start_month_var.get()) in
+        #                                                                      [1, 3, 5, 7, 8, 10, 12] else
+        #                                                                   (30 if int(self.start_month_var.get()) in
+        #                                                                      [2, 4, 6, 9, 11] else 28))]
+        self.start_day_var.set('20')
+
+        Label(info_frame, text='end date: ', font=(None, 14)).place(relx=0.25, rely=0, relwidth=0.07, relheight=0.1)
+
+        self.end_year_var = StringVar()
+        self._end_year = ttk.Combobox(info_frame,
+                                      textvariable=self.end_year_var)
+        self._end_year.place(relx=0.32, rely=0, relwidth=0.07, relheight=0.1)
+        self._end_year['values'] = ['2019', '2020']
+        self.end_year_var.set(self.BC.date[:4])
+
+        self.end_month_var = StringVar()
+        self._end_month = ttk.Combobox(info_frame,
+                                       textvariable=self.end_month_var)
+        self._end_month.bind('<<ComboboxSelected>>', self._adjust_end_day)
+        self._end_month.place(relx=0.39, rely=0, relwidth=0.05, relheight=0.1)
+        self._end_month['values'] = [str(i).zfill(2) for i in range(1, 13)]
+        self.end_month_var.set(self.BC.date[5:7])
+
+        self.end_day_var = StringVar()
+        self._end_day = ttk.Combobox(info_frame,
+                                     textvariable=self.end_day_var)
+        self._end_day.place(relx=0.44, rely=0, relwidth=0.05, relheight=0.1)
+        self._adjust_end_day()
+        # self._end_day['values'] = [str(i).zfill(2) for i in range(1, 32)]
+        self.end_day_var.set(self.BC.date[8:])
+
+        self._info_text = Text(info_frame,
+                               font=(None, 12))
+        self._info_text.place(relx=0.01, rely=0.1, relwidth=0.83, relheight=0.85)
+        self._info_text.insert(0.0, '欢迎使用!')
+        self._info_text['state'] = 'disabled'
+
+        Button(info_frame, text='calculate bill', font=(None, 12),
+               command=self.calculate_bill).place(relx=0.85, rely=0.05, relwidth=0.14, relheight=0.12)
+        Button(info_frame, text='show date', font=(None, 12),
+               command=self.show_bill_in_date).place(relx=0.85, rely=0.18, relwidth=0.14, relheight=0.12)
+        Button(info_frame, text='show supermarket', font=(None, 12),
+               command=self.show_bill_in_supermarket).place(relx=0.85, rely=0.31, relwidth=0.14, relheight=0.12)
+
+    def _adjust_start_day(self, event=None):
+        self._start_day['values'] = [str(i).zfill(2) for i in range(1, 32 if int(self.start_month_var.get()) in
+                                                                             [1, 3, 5, 7, 8, 10, 12] else
+                                                                             (31 if int(self.start_month_var.get()) in
+                                                                             [4, 6, 9, 11] else 29))]
+
+    def _adjust_end_day(self, event=None):
+        self._end_day['values'] = [str(i).zfill(2) for i in range(1, 32 if int(self.end_month_var.get()) in
+                                                                             [1, 3, 5, 7, 8, 10, 12] else
+                                                                             (31 if int(self.end_month_var.get()) in
+                                                                             [4, 6, 9, 11] else 29))]
+
+    def fuzzy_matching(self):
+        user_input = self.product_name_var.get()
+        if user_input:
+            self._product_name['values'] = [new_product_name for new_product_name in self.product_name
+                                            if user_input in new_product_name[:len(user_input)]]
+        else:
+            self._product_name['values'] = self.product_name
 
     def product_name_selected(self, event=None):
         if self.product_name_var.get() in self.product_name:
@@ -216,3 +307,48 @@ class App:
         self.year_entry.delete(0, END)
         self.month_entry.delete(0, END)
         self.day_entry.delete(0, END)
+
+    def show_info(self, message):
+        self._info_text['state'] = 'normal'
+        self._info_text.insert(END, '\n'+message)
+        self._info_text['state'] = 'disabled'
+
+    def calculate_bill(self):
+        self._info_text['state'] = 'normal'
+        self._info_text.delete(0.0, END)
+        self.start_date = self.start_year_var.get()+self.start_month_var.get()+self.start_day_var.get()
+        self.end_date = self.end_year_var.get()+self.end_month_var.get()+self.end_day_var.get()
+        message = '{}年{}月{}日至{}年{}月{}日:'.format(self.start_date[:4], self.start_date[4:6], self.start_date[6:],
+                                                self.end_date[:4], self.end_date[4:6], self.end_date[6:])
+        self.show_info(message)
+
+        self.bill_result = self.BC.calculate_bill(self.start_date, self.end_date)
+        result_in_person = self.bill_result['person']
+        if result_in_person:
+            summe = 0.0
+            for member, bill in result_in_person.items():
+                cost = 0.0
+                for i, b in enumerate(bill):
+                    if i != self.BC.members.index(member) and b[0] != 0.0:
+                        to_pay = b[0]
+                        paid = b[1]
+                        get_from = result_in_person[self.BC.members[i]][self.BC.members.index(member)][0] - \
+                                   result_in_person[self.BC.members[i]][self.BC.members.index(member)][1]
+                        if to_pay-paid > get_from:
+                            message = '{}应付{}欧给{}'.format(self.BC.members_name[member], round(to_pay-paid-get_from, 2),
+                                                          self.BC.members_name[self.BC.members[i]])
+                            self.show_info(message)
+                        elif to_pay == get_from:
+                            continue
+                    cost += b[0]
+                summe += cost
+                message = '{}一共花了{}欧\n'.format(self.BC.members_name[member], round(cost, 2))
+                self.show_info(message)
+            message = '所有人一共花了{}欧'.format(round(summe, 2))
+            self.show_info(message)
+
+    def show_bill_in_date(self):
+        self.BC.show_bill_in_date(self.start_date, self.end_date)
+
+    def show_bill_in_supermarket(self):
+        self.BC.show_supermarket(self.start_date, self.end_date)

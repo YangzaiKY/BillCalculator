@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # bc.read_product_name()
 
     # new_products_name = {}
-    # with open('data/ProductsName.json', 'r') as f:
+    # with open('../data/ProductsName.json', 'r') as f:
     #     if f.read():
     #         f.seek(0)
     #         new_products_name = json.load(f)
@@ -54,12 +54,12 @@ if __name__ == '__main__':
     #             new_products_name[opn] = '{:.2f}'.format(pr)
     #         print(len(old_products_name))
     #
-    # with open('data/ProductsName.json', 'w') as f:
+    # with open('../data/ProductsName.json', 'w') as f:
     #     f.write(json.dumps(bc.sort_dict(new_products_name)))
 
     # summe = {}
     #
-    # with open('data/BillHistory.json', 'r') as f:
+    # with open('../data/BillHistory.json', 'r') as f:
     #     if f.read():
     #         f.seek(0)
     #         bill_history = json.load(f)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # bc.show_bill()
 
     # add supermarket
-    # with open('data/BillHistory.json', 'r') as f:
+    # with open('../data/BillHistory.json', 'r') as f:
     #     if f.read():
     #         f.seek(0)
     #         bill_history = json.load(f)
@@ -111,13 +111,13 @@ if __name__ == '__main__':
     #             for i in bill_history[date]:
     #                 print(i)
     #
-    # with open('data/BillHistory.json', 'w') as f:
+    # with open('../data/BillHistory.json', 'w') as f:
     #     f.write(json.dumps(bc.sort_dict(bill_history)))
 
     # show market
     # supermarkt = ['REWE', 'LiLi', 'Asia Kauf', 'Kaufland', 'ROSSMANN']
     # spent_money = [0.0] * len(supermarkt)
-    # with open('data/BillHistory.json', 'r') as f:
+    # with open('../data/BillHistory.json', 'r') as f:
     #     if f.read():
     #         f.seek(0)
     #         bill_history = json.load(f)
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     # calculate_result = {}
     # for member in bc.members:
     #     calculate_result[member] = [[0.0, 0] for _ in range(4)]
-    # with open('data/BillHistory.json', 'r') as f:
+    # with open('../data/BillHistory.json', 'r') as f:
     #     if f.read():
     #         f.seek(0)
     #         bill_history = json.load(f)
@@ -187,14 +187,14 @@ if __name__ == '__main__':
     #         cost += b[0]
     #     print('{}一共花了{}欧\n'.format(member_name[member], cost))
     # print('所有人一共花了{}欧'.format(round(result, 2)))
-    bc.calculate_bill()
-
-    bc.show_bill_result()
+    # bc.calculate_bill()
+    #
+    # bc.show_bill_result()
     # bc.show_bill_in_date()
     # bc.show_supermarket()
-
+    print(bc.date)
     # add new item "paid"
-    # with open('data/BillHistory.json', 'r') as f:
+    # with open('../data/BillHistory.json', 'r') as f:
     #     if f.read():
     #         f.seek(0)
     #         bill_history = json.load(f)
@@ -203,6 +203,31 @@ if __name__ == '__main__':
     #                 bill[i]['paid'] = 'no'
     #             bill_history[date] = bill
     #
-    # with open('data/BillHistory.json', 'w') as f:
+    # with open('../data/BillHistory.json', 'w') as f:
     #     f.write(json.dumps(bill_history))
 
+    # TODO 用postcommand和输入框中的字符串改变Combobox的value来实现模糊匹配
+
+    # add bill in date of all
+    # bill_history = bc.read_all_history()
+    # with open('../data/bill_result.json', 'r') as f:
+    #     if f.read():
+    #         f.seek(0)
+    #         bill_result = json.load(f)
+    #         for date, result in bill_result['date'].items():
+    #             bill_per_person = [0.0]*5
+    #             # print(date, result)
+    #             for bill in bill_history[date]:
+    #                 bill_per_person[4] += float(bill['price'])
+    #                 if bill['owner'] == 'All':
+    #                     bill_per_person = [round(bill_per_person[i]+float(bill['price'])/4.0, 2)
+    #                                        if i < 4 else bill_per_person[i] for i in range(5)]
+    #                     continue
+    #                 owner = bill['owner'].split(' ')
+    #                 # print(owner)
+    #                 for ow in owner:
+    #                     bill_per_person[bc.members.index(ow)] += float(bill['price']) / len(owner)
+    #             bill_per_person = list(map(lambda x: round(x, 2), bill_per_person))
+    #             bill_result['date'][date] = bill_per_person
+    # with open('../data/bill_result.json', 'w') as f:
+    #     f.write(json.dumps(bill_result))

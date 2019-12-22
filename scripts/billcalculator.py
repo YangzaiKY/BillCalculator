@@ -20,7 +20,7 @@ class BillCalculator:
         self.bill_history = {}
 
     def read_all_history(self):
-        with open('data/BillHistory.json', 'r') as f:
+        with open('../data/BillHistory.json', 'r') as f:
             if f.read():
                 f.seek(0)
                 self.bill_history = json.load(f)
@@ -32,10 +32,10 @@ class BillCalculator:
             date = self.date
         bill = []
         if product_name and amount and price and owner and buyer and paid:
-            for pn, am, pr, ow, bu in zip(product_name, amount, price, owner, buyer, paid):
+            for pn, am, pr, ow, bu, pa in zip(product_name, amount, price, owner, buyer, paid):
                 bill.append({"product_name": pn, "amount": am, "price": pr, "owner": ow, "buyer": bu,
-                             "supermarket": supermarket, "paid": paid})
-        with open('data/BillHistory.json', 'r') as f:
+                             "supermarket": supermarket, "paid": pa})
+        with open('../data/BillHistory.json', 'r') as f:
             if f.read():
                 f.seek(0)
                 self.bill_history = json.load(f)
@@ -47,17 +47,17 @@ class BillCalculator:
                 self.bill_history[date] = bill
                 print('file is empty!')
 
-        with open('data/BillHistory.json', 'w') as f:
+        with open('../data/BillHistory.json', 'w') as f:
             f.write(json.dumps(self.sort_dict(self.bill_history)))
 
     def add_product_name(self, new_product_name=None, price=None):
         product_name = {}
-        with open('data/ProductsName.json', 'r') as r:
+        with open('../data/ProductsName.json', 'r') as r:
             if r.read():
                 r.seek(0)
                 product_name = json.load(r)
 
-        with open('data/ProductsName.json', 'w') as f:
+        with open('../data/ProductsName.json', 'w') as f:
             if new_product_name:
                 for npn, p in zip(new_product_name, price):
                     product_name[npn] = p
@@ -65,7 +65,7 @@ class BillCalculator:
 
     def read_product_name(self):
         products_name = None
-        with open('data/ProductsName.json', 'r') as f:
+        with open('../data/ProductsName.json', 'r') as f:
             if f.read():
                 f.seek(0)
                 products_name = json.load(f)
@@ -78,15 +78,23 @@ class BillCalculator:
             sorted_dict[key] = old_dict[key]
         return sorted_dict
 
-    def calculate_bill(self):
+    def calculate_bill(self, start_date, end_date):
         bill_history = self.read_all_history()
         bill_result = {}
         summe = {}
         for date, bill in bill_history.items():
-            s = 0
-            for item in bill:
-                s += float(item['price'])
-            summe[date] = round(s, 2)
+            if int(start_date) <= int(date) <= int(end_date):
+                bill_per_person = [0.0]*5
+                for b in bill:
+                    bill_per_person[4] += float(b['price'])
+                    if b['owner'] == 'All':
+                        bill_per_person = [round(bill_per_person[i]+float(b['price'])/4.0, 2)
+                                           if i < 4 else bill_per_person[i] for i in range(5)]
+                        continue
+                    owner = b['owner'].split(' ')
+                    for ow in owner:
+                        bill_per_person[self.members.index(ow)] += float(b['price']) / len(owner)
+                summe[date] = list(map(lambda x: round(x, 2), bill_per_person))
         if summe:
             bill_result["date"] = self.sort_dict(summe)
 
@@ -94,19 +102,20 @@ class BillCalculator:
         for member in self.members:
             calculate_result[member] = [[0.0, 0.0] for _ in range(4)]
         for date, bill in bill_history.items():
-            for b in bill:
-                if b['owner'] == 'All':
-                    for member in self.members:
-                        calculate_result[member][self.members.index(b['buyer'])][0] += float(b['price']) / 4
-                        if b['paid'] == 'yes':
-                            calculate_result[member][self.members.index(b['buyer'])][1] += float(b['price']) / 4
-                else:
-                    owner = b['owner'].split(' ')
-                    for member in owner:
-                        calculate_result[member][self.members.index(b['buyer'])][0] += float(b['price']) / len(owner)
-                        if b['paid'] == 'yes':
-                            calculate_result[member][self.members.index(b['buyer'])][1] += float(b['price']) / len(
-                                owner)
+            if int(start_date) <= int(date) <= int(end_date):
+                for b in bill:
+                    if b['owner'] == 'All':
+                        for member in self.members:
+                            calculate_result[member][self.members.index(b['buyer'])][0] += float(b['price']) / 4
+                            if b['paid'] == 'yes':
+                                calculate_result[member][self.members.index(b['buyer'])][1] += float(b['price']) / 4
+                    else:
+                        owner = b['owner'].split(' ')
+                        for member in owner:
+                            calculate_result[member][self.members.index(b['buyer'])][0] += float(b['price']) / len(owner)
+                            if b['paid'] == 'yes':
+                                calculate_result[member][self.members.index(b['buyer'])][1] += float(b['price']) / len(
+                                    owner)
 
         for member in self.members:
             for j in range(4):
@@ -116,20 +125,22 @@ class BillCalculator:
 
         spent_money = [0.0] * len(self.supermarket)
         for date, bill in bill_history.items():
-            for index, item in enumerate(bill):
-                spent_money[self.supermarket.index(item['supermarket'])] += float(item['price'])
+            if int(start_date) <= int(date) <= int(end_date):
+                for index, item in enumerate(bill):
+                    spent_money[self.supermarket.index(item['supermarket'])] += float(item['price'])
 
         for i, item in enumerate(spent_money):
             spent_money[i] = round(spent_money[i], 2)
 
         bill_result["supermarket"] = spent_money
 
-        with open('data/bill_result.json', 'w') as f:
+        with open('../data/bill_result.json', 'w') as f:
             f.write(json.dumps(bill_result))
+        return bill_result
 
     def show_bill_result(self):
         calculate_result = None
-        with open('data/bill_result.json', 'r') as f:
+        with open('../data/bill_result.json', 'r') as f:
             if f.read():
                 f.seek(0)
                 bill_result = json.load(f)
@@ -153,9 +164,9 @@ class BillCalculator:
                 print('{}一共花了{}欧\n'.format(self.members_name[member], round(cost, 2)))
             print('所有人一共花了{}欧'.format(round(summe, 2)))
 
-    def show_bill_in_date(self):
+    def show_bill_in_date(self, start_date, end_date):
         bill_in_date = None
-        with open('data/bill_result.json', 'r') as f:
+        with open('../data/bill_result.json', 'r') as f:
             if f.read():
                 f.seek(0)
                 bill_result = json.load(f)
@@ -165,59 +176,68 @@ class BillCalculator:
             for k in bill_in_date.keys():
                 key.append('/'.join([k[:4], k[4:6], k[6:]]))
             xs = [datetime.datetime.strptime(d, '%Y/%m/%d').date() for d in key]
-            plt.bar(xs, list(bill_in_date.values()))
-            plt.xlim(datetime.datetime.strptime('2019/10/20', '%Y/%m/%d').date(),
-                     datetime.datetime.strptime('2019/12/20', '%Y/%m/%d').date())
+            plt.figure(figsize=(15, 7))
+            plt.bar(xs, [i[4] for i in list(bill_in_date.values())], color='red')
+            plt.bar(xs, [i[0]+i[1]+i[2] for i in list(bill_in_date.values())], color='green')
+            plt.bar(xs, [i[0]+i[1] for i in list(bill_in_date.values())], color='blue')
+            plt.bar(xs, [i[0] for i in list(bill_in_date.values())], color='orange')
+            new_start_date = str(datetime.datetime.strptime(start_date, '%Y%m%d') -
+                             datetime.timedelta(days=2)).split(' ')[0]
+            new_end_date = str(datetime.datetime.strptime(end_date, '%Y%m%d') +
+                           datetime.timedelta(days=2)).split(' ')[0]
+            plt.xlim(datetime.datetime.strptime(new_start_date, '%Y-%m-%d').date(),
+                     datetime.datetime.strptime(new_end_date, '%Y-%m-%d').date())
+            plt.gcf().autofmt_xdate()
+            plt.legend(['Yang Ye', 'Lai Ke', 'Hu Kai', 'Wu Kangyang'])
+            plt.title('Bill from {}.{}.{} to {}.{}.{}'.format(start_date[:4], start_date[4:6], start_date[6:],
+                                                              end_date[:4], end_date[4:6], end_date[6:]))
             plt.show()
 
-    def show_supermarket(self):
+    def show_supermarket(self, start_date, end_date):
         spent_money = None
-        with open('data/bill_result.json', 'r') as f:
+        with open('../data/bill_result.json', 'r') as f:
             if f.read():
                 f.seek(0)
                 bill_result = json.load(f)
                 spent_money = bill_result["supermarket"]
 
         if spent_money:
-            show_with_pie = True
-            show_with_barh = True
+            fig, (ax1, ax2) = plt.subplots(1, 2)
+            fig.set_figheight(8)
+            fig.set_figwidth(16)
+            colors = ['red', 'yellowgreen', 'lightskyblue', 'yellow', 'orange', 'green']
+            explode = ([0] * len(self.supermarket))
 
-            if show_with_pie:
-                plt.figure(figsize=(9, 9))
-                colors = ['red', 'yellowgreen', 'lightskyblue', 'yellow', 'orange', 'green']
-                explode = ([0] * len(self.supermarket))
+            ax1.pie(spent_money,
+                    explode=explode,
+                    labels=self.supermarket,
+                    colors=colors,
+                    autopct='%3.2f%%',
+                    shadow=False,
+                    startangle=90,
+                    pctdistance=0.8,
+                    labeldistance=1.1)
+            ax1.axis('equal')
+            ax1.legend()
 
-                plt.pie(spent_money,
-                        explode=explode,
-                        labels=self.supermarket,
-                        colors=colors,
-                        autopct='%3.2f%%',
-                        shadow=False,
-                        startangle=90,
-                        pctdistance=0.8,
-                        labeldistance=1.2)
-                plt.axis('equal')
-                plt.legend()
-                plt.show()
+            supermarket = {su: sp for su, sp in zip(self.supermarket, spent_money)}
+            supermarket = sorted(supermarket.items(), key=lambda value: value[1])
 
-            if show_with_barh:
-                supermarket = {su: sp for su, sp in zip(self.supermarket, spent_money)}
-                supermarket = sorted(supermarket.items(), key=lambda value: value[1])
+            y = []
+            x = []
+            for key, value in supermarket:
+                y.append(key)
+                x.append(value)
+            b = ax2.barh(y, x, facecolor='green')
+            for index, rect in enumerate(b):
+                w = rect.get_width()
+                ax2.text(w, rect.get_y() + rect.get_height() / 2, '{:.2f}'.format(x[index]))
 
-                y = []
-                x = []
-                for key, value in supermarket:
-                    y.append(key)
-                    x.append(value)
-                fig, ax = plt.subplots()
-                b = ax.barh(y, x, facecolor='green')
-                for index, rect in enumerate(b):
-                    w = rect.get_width()
-                    ax.text(w, rect.get_y()+rect.get_height()/2, '{:.2f}'.format(x[index]))
+            ax2.set_yticks(range(len(y)))
+            ax2.set_yticklabels(y)
 
-                ax.set_yticks(range(len(y)))
-                ax.set_yticklabels(y)
-
-                plt.xticks(())
-                plt.show()
-
+            plt.xticks(())
+            plt.title('Bill in supermarket from {}.{}.{} to {}.{}.{}'.format(start_date[:4], start_date[4:6],
+                                                                             start_date[6:], end_date[:4],
+                                                                             end_date[4:6], end_date[6:]))
+            plt.show()
