@@ -23,13 +23,13 @@ class App:
 
         Label(frame, text='Date:', font=(None, 12)).place(relx=0, rely=0, relwidth=0.1, relheight=0.05)
 
-        self.day_entry = Entry(frame, font=12, width=20)
-        self.day_entry.place(relx=0.1, rely=0, relwidth=0.06, relheight=0.05)
-        self.day_entry.insert(END, '2019')
+        self.year_entry = Entry(frame, font=12, width=20)
+        self.year_entry.place(relx=0.1, rely=0, relwidth=0.06, relheight=0.05)
+        self.year_entry.insert(END, '2020')
         self.month_entry = Entry(frame, font=12, width=20)
         self.month_entry.place(relx=0.17, rely=0, relwidth=0.05, relheight=0.05)
-        self.year_entry = Entry(frame, font=12, width=20)
-        self.year_entry.place(relx=0.23, rely=0, relwidth=0.05, relheight=0.05)
+        self.day_entry = Entry(frame, font=12, width=20)
+        self.day_entry.place(relx=0.23, rely=0, relwidth=0.05, relheight=0.05)
 
         Label(frame, text='Supermarket:', font=(None, 12)).place(relx=0.33, rely=0, relwidth=0.1, relheight=0.05)
 
@@ -59,7 +59,7 @@ class App:
                                             textvariable=self.product_amount_var)
         self._product_amount.bind("<<ComboboxSelected>>", self.product_amount_changed)
         self._product_amount.place(relx=0.23, rely=0.12, relwidth=0.09, relheight=0.07)
-        self._product_amount['values'] = [1, 2, 3, 4]
+        self._product_amount['values'] = [i for i in range(1, 10)]
         self.product_amount_var.set(1)
 
         self.price_var = StringVar()
@@ -193,7 +193,7 @@ class App:
         user_input = self.product_name_var.get()
         if user_input:
             self._product_name['values'] = [new_product_name for new_product_name in self.product_name
-                                            if user_input in new_product_name[:len(user_input)]]
+                                            if user_input.lower() in new_product_name[:len(user_input)].lower()]
         else:
             self._product_name['values'] = self.product_name
 
@@ -261,8 +261,8 @@ class App:
         self.product_name_var.set('')
         self.product_amount_var.set('1')
         self.price_var.set('')
-        self.owner_var.set('')
-        self.buyer_var.set('')
+        # self.owner_var.set('')
+        # self.buyer_var.set('')
         self.paid_var.set('no')
         self._product_name.focus_set()
 
@@ -295,9 +295,9 @@ class App:
         unit_price = map(get_unit_price, price, amount)
         self.BC.add_product_name(product_name, unit_price)
 
-        year = self.day_entry.get()
+        year = self.year_entry.get()
         month = self.month_entry.get()
-        day = self.year_entry.get()
+        day = self.day_entry.get()
         date = year+month+day
 
         self.BC.add_new_bill(date, product_name, amount, price, owner, buyer, paid,
@@ -305,7 +305,8 @@ class App:
 
         self._product_list.delete(0, END)
         self.year_entry.delete(0, END)
-        self.month_entry.delete(0, END)
+        self.year_entry.insert(END, '2020')
+        # self.month_entry.delete(0, END)
         self.day_entry.delete(0, END)
 
     def show_info(self, message):

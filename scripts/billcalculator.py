@@ -14,7 +14,7 @@ class BillCalculator:
                                  'KW KH', 'KW KL', 'KW YY', 'KH KL', 'KH YY', 'KL YY',
                                  'KW KH KL', 'KW KH YY', 'KW KL YY', 'KH KL YY']
         self.members_name = {'KW': '吴康洋', 'KH': '胡凯', 'KL': '赖科', 'YY': '杨晔'}
-        self.supermarket = ['REWE', 'Netto', 'LiLi', 'Asia Kauf', 'Kaufland', 'ROSSMANN']
+        self.supermarket = ['REWE', 'Netto', 'LiLi', 'Asia Kauf', 'Kaufland', 'ROSSMANN', 'dm', 'KFC', 'Nefis Restaurant', 'Apotheke']
         self.products_name = None
         self.date = str(datetime.date.today())
         self.bill_history = {}
@@ -205,7 +205,7 @@ class BillCalculator:
             fig, (ax1, ax2) = plt.subplots(1, 2)
             fig.set_figheight(8)
             fig.set_figwidth(16)
-            colors = ['red', 'yellowgreen', 'lightskyblue', 'yellow', 'orange', 'green']
+            colors = ['red', 'yellowgreen', 'lightskyblue', 'yellow', 'orange', 'green', 'purple']
             explode = ([0] * len(self.supermarket))
 
             ax1.pie(spent_money,
